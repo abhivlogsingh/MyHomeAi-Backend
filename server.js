@@ -6,10 +6,11 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const path = require('path');
+const fileUpload = require('express-fileupload'); // Middleware for handling file uploads
 
 const sequelize = require('./db/connection'); // DB connection file
 const authRoutes = require('./routes/auth.routes');
-// const userRoutes = require("./routes/user.routes");
+const blogRoutes = require('./routes/blog.route'); // Routes for blog management
 
 const app = express();
 
@@ -19,9 +20,13 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(helmet());
 
+app.use(fileUpload({ useTempFiles: true, tempFileDir: '/tmp/' })); // Temporary directory for storing files
+app.use(express.json()); // Parse incoming JSON data
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve static files
+
 // ✅ Routes
 app.use('/api/auth', authRoutes);
-// app.use("/api/users", userRoutes);
+app.use('/api/blog', blogRoutes); // Routes for handling blogs
 
 // ✅ Sequelize Connection Check
 sequelize
