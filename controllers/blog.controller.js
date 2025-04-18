@@ -2,28 +2,36 @@
 
 const fs = require('fs');
 const path = require('path');
-const Blog = require('../models/blog.model'); // Import the Blog model
+const Blog = require('../models/blog.model');
 
-// Create a new blog entry with optional cover image upload
+// ✅ Helper function to clean file names
+const sanitizeFileName = (fileName) => {
+	const extension = path.extname(fileName);
+	const baseName = path.basename(fileName, extension);
+
+	const safeName = baseName
+		.replace(/\s+/g, '_') // spaces → _
+		.replace(/[^a-zA-Z0-9_-]/g, ''); // remove special chars
+
+	return `${safeName}_${Date.now()}${extension}`;
+};
+
+// ✅ Create Blog
 const createBlog = async (req, res) => {
 	const { post_title, content, description } = req.body;
 	let cover_img = null;
 
 	try {
-		// Check if a cover image file was uploaded
 		if (req.files && req.files.cover_img) {
 			const coverImgFile = req.files.cover_img;
-			const uploadDir = path.join(__dirname, '../uploads'); // Ensure this folder exists
-			const uploadPath = path.join(uploadDir, coverImgFile.name);
+			const uploadDir = path.join(__dirname, '../uploads');
+			const finalFileName = sanitizeFileName(coverImgFile.name);
+			const uploadPath = path.join(uploadDir, finalFileName);
 
-			// Move the file to the uploads folder
 			await coverImgFile.mv(uploadPath);
-
-			// Save the file path or URL to the database
-			cover_img = `/uploads/${coverImgFile.name}`;
+			cover_img = `/uploads/${finalFileName}`;
 		}
 
-		// Create a new blog entry in the database
 		const blog = await Blog.create({
 			post_title,
 			content,
@@ -31,14 +39,14 @@ const createBlog = async (req, res) => {
 			description,
 		});
 
-		res.status(201).json(blog); // Respond with the created blog entry
+		res.status(201).json(blog);
 	} catch (err) {
 		console.error('Error creating blog entry:', err);
 		res.status(500).send('Server error');
 	}
 };
 
-// Get all blog entries
+// ✅ Get All Blogs
 const getAllBlogs = async (req, res) => {
 	try {
 		const blogs = await Blog.findAll();
@@ -49,7 +57,7 @@ const getAllBlogs = async (req, res) => {
 	}
 };
 
-// Get a blog entry by its ID
+// ✅ Get Blog By ID
 const getBlogById = async (req, res) => {
 	const { id } = req.params;
 	try {
@@ -62,7 +70,7 @@ const getBlogById = async (req, res) => {
 	}
 };
 
-// Update a blog entry by its ID, including optional cover image update
+// ✅ Update Blog
 const updateBlog = async (req, res) => {
 	const { id } = req.params;
 	const { post_title, content, description } = req.body;
@@ -71,28 +79,24 @@ const updateBlog = async (req, res) => {
 		const blog = await Blog.findByPk(id);
 		if (!blog) return res.status(404).send('Blog entry not found');
 
-		let cover_img = blog.cover_img; // Retain the current image path by default
+		let cover_img = blog.cover_img;
 
-		// Check if a new cover image file was uploaded
 		if (req.files && req.files.cover_img) {
 			const coverImgFile = req.files.cover_img;
 			const uploadDir = path.join(__dirname, '../uploads');
-			const uploadPath = path.join(uploadDir, coverImgFile.name);
+			const finalFileName = sanitizeFileName(coverImgFile.name);
+			const uploadPath = path.join(uploadDir, finalFileName);
 
-			// Delete the old file if it exists
+			// delete old file
 			if (cover_img) {
 				const oldFilePath = path.join(__dirname, '..', cover_img);
-				if (fs.existsSync(oldFilePath)) {
-					fs.unlinkSync(oldFilePath);
-				}
+				if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
 			}
 
-			// Move the new file to the uploads folder
 			await coverImgFile.mv(uploadPath);
-			cover_img = `/uploads/${coverImgFile.name}`; // Update to the new file path
+			cover_img = `/uploads/${finalFileName}`;
 		}
 
-		// Update the blog entry in the database
 		await blog.update({ post_title, content, cover_img, description });
 		res.json({ message: 'Blog entry updated successfully' });
 	} catch (err) {
@@ -101,36 +105,26 @@ const updateBlog = async (req, res) => {
 	}
 };
 
-// Delete a blog entry by its ID and remove the associated cover image
+// ✅ Delete Blog
 const deleteBlog = async (req, res) => {
 	const { id } = req.params;
 	try {
 		const blog = await Blog.findByPk(id);
 		if (!blog) return res.status(404).send('Blog entry not found');
 
-		// Delete the associated cover image file if it exists
 		if (blog.cover_img) {
 			const filePath = path.join(__dirname, '..', blog.cover_img);
-			if (fs.existsSync(filePath)) {
-				fs.unlinkSync(filePath);
-				console.log(`Successfully deleted file: ${filePath}`);
-			} else {
-				console.warn(`File not found: ${filePath}`);
-			}
+			if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 		}
 
-		// Delete the blog entry from the database
 		await blog.destroy();
-		res.json({
-			message: 'Blog entry and associated file deleted successfully',
-		});
+		res.json({ message: 'Blog entry and associated file deleted successfully' });
 	} catch (err) {
 		console.error('Error deleting blog entry:', err);
 		res.status(500).send('Server error');
 	}
 };
 
-// Export the functions for use in other parts of the application
 module.exports = {
 	createBlog,
 	getAllBlogs,

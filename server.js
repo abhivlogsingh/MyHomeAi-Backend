@@ -24,7 +24,9 @@ app.use(
 
 app.use(express.json());
 app.use(morgan('dev'));
-app.use(helmet());
+app.use(helmet({
+	crossOriginResourcePolicy: false,
+  }));
 
 app.use(fileUpload({ useTempFiles: true, tempFileDir: '/tmp/' })); // Temporary directory for storing files
 app.use(express.json()); // Parse incoming JSON data
