@@ -17,7 +17,7 @@ const app = express();
 // 👇 Allow multiple origins
 const allowedOrigins = [
 	'http://localhost:5173',
-	'https://myhomeai-frontend.onrender.com', // 👈 your frontend render domain
+	'https://my-home-ai.vercel.app', // 👈 your frontend render domain
   ];
   
   app.use(
@@ -32,7 +32,7 @@ const allowedOrigins = [
 	  credentials: true,
 	})
   );
-  
+
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(helmet({
