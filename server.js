@@ -14,14 +14,25 @@ const blogRoutes = require('./routes/blog.route'); // Routes for blog management
 
 const app = express();
 
-// ✅ Middleware
-app.use(
+// 👇 Allow multiple origins
+const allowedOrigins = [
+	'http://localhost:5173',
+	'https://myhomeai-frontend.onrender.com', // 👈 your frontend render domain
+  ];
+  
+  app.use(
 	cors({
-		origin: 'https://myhomeai-backend.onrender.com',
-		credentials: true,
+	  origin: function (origin, callback) {
+		if (!origin || allowedOrigins.includes(origin)) {
+		  callback(null, true);
+		} else {
+		  callback(new Error('Not allowed by CORS'));
+		}
+	  },
+	  credentials: true,
 	})
-);
-
+  );
+  
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(helmet({
