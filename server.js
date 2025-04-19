@@ -18,6 +18,7 @@ const app = express();
 const allowedOrigins = [
 	'http://localhost:5173',
 	'https://my-home-ai.vercel.app', // 👈 your frontend render domain
+	'https://myhomeai.multipleaisolutions.com.au'
   ];
   
   app.use(
